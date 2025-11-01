@@ -49,7 +49,7 @@ Virtual Environment (recommended)
 
 ### **Step 1: Clone the Repository**
 
-git clone https://github.com/yourusername/Smart-Wardrobe-Assistant.git
+git clone https://github.com/Jnaneshp/outfit-recommender.git
 cd Smart-Wardrobe-Assistant
 
 ### **Step 2: Create Virtual Environment** (use python 10.13)
