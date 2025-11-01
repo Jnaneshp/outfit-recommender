@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Wardrobe Assistant</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<nav>
+  <div>Smart Wardrobe Assistant</div>
+  <div>
+    {% if user %}
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('recommend') }}">Recommendations</a>
+      <a href="{{ url_for('wardrobe') }}">My Wardrobe</a>
+      <a href="{{ url_for('logout') }}">Logout</a>
+    {% else %}
+      <a href="{{ url_for('login') }}">Login / Register</a>
+    {% endif %}
+  </div>
+</nav>
+
+<div class="container">
+  <h2>👕 Smart Wardrobe Assistant</h2>
+
+  <form id="uploadForm" enctype="multipart/form-data">
+    <input type="file" name="file" accept="image/*" required />
+    <button type="submit">Upload</button>
+  </form>
+
+  <h3>Uploaded Item</h3>
+  <div id="uploadResult"></div>
+
+  <div style="text-align:center; margin-top:20px;">
+    <button onclick="generateOutfit()">✨ Generate Outfit</button>
+  </div>
+  <div id="outfit"></div>
+</div>
+
+<script>
+document.getElementById("uploadForm").onsubmit = async (e) => {
+  e.preventDefault();
+  let formData = new FormData(e.target);
+
+  let res = await fetch("/upload", { method: "POST", body: formData });
+  let data = await res.json();
+
+  // Show uploaded image + text
+  document.getElementById("uploadResult").innerHTML = `
+    <img src="${data.file_url}" alt="Uploaded Image" style="max-width:150px;border:2px solid #ddd;border-radius:8px;">
+    <p><strong>Subtype:</strong> ${data.subtype}</p>
+    <p><strong>Info:</strong> ${data.info}</p>
+    <p><strong>Season:</strong> ${data.season}</p>
+    <p><strong>Occasion:</strong> ${data.occasion}</p>
+  `;
+};
+
+async function generateOutfit() {
+  let res = await fetch("/recommend");
+  let data = await res.json();
+
+  if(data.error){
+    document.getElementById("outfit").innerHTML = `<p style="color:red;">${data.error}</p>`;
+  } else {
+    document.getElementById("outfit").innerHTML = `
+      <h3>Recommended Outfit</h3>
+      <p>Occasion: ${data.occasion || "N/A"} | Season: ${data.season || "N/A"}</p>
+      <div style="display:flex; justify-content:center; gap:10px; flex-wrap:wrap;">
+        <img src="${data.top}" alt="Top" style="max-width:150px;border:2px solid #ddd;border-radius:8px;">
+        <img src="${data.bottom}" alt="Bottom" style="max-width:150px;border:2px solid #ddd;border-radius:8px;">
+        <img src="${data.shoe}" alt="Shoes" style="max-width:150px;border:2px solid #ddd;border-radius:8px;">
+      </div>
+    `;
+  }
+}
+</script>
+
+</body>
+</html>

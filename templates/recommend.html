@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Recommendations - Smart Wardrobe</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    .preference-form {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 30px;
+      border-radius: 15px;
+      color: white;
+      margin: 30px 0;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .preference-form h3 {
+      margin-bottom: 25px;
+      text-align: center;
+      font-size: 28px;
+      font-weight: bold;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      margin-bottom: 8px;
+      font-weight: 600;
+      font-size: 16px;
+    }
+
+    .form-control {
+      padding: 12px 15px;
+      font-size: 16px;
+      border-radius: 8px;
+      border: 2px solid #fff;
+      background: white;
+      color: #333;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .form-control:focus {
+      outline: none;
+      border-color: #4CAF50;
+      box-shadow: 0 0 10px rgba(76, 175, 80, 0.3);
+    }
+
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 15px;
+    }
+
+    .generate-btn, .wear-btn {
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+      transition: all 0.3s;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+
+    .generate-btn {
+      background: white;
+      color: #667eea;
+      grid-column: 1 / -1;
+    }
+
+    .generate-btn:hover {
+      background: #f0f0f0;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+
+    .wear-btn {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .wear-btn:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+    }
+
+    .wear-btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .refresh-btn {
+      background: #2196F3;
+      color: white;
+    }
+
+    .refresh-btn:hover {
+      background: #0b7dda;
+    }
+
+    .recommend-container {
+      margin-top: 40px;
+    }
+
+    #outfit-result {
+      background: #f8f9fa;
+      padding: 30px;
+      border-radius: 15px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      animation: fadeIn 0.5s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    #outfit-result h4 {
+      text-align: center;
+      margin-bottom: 15px;
+      font-size: 24px;
+      color: #333;
+    }
+
+    .outfit-info {
+      text-align: center;
+      margin-bottom: 25px;
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+      font-size: 16px;
+    }
+
+    .outfit-info strong {
+      color: #667eea;
+    }
+
+    .recommend-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 25px;
+      margin-bottom: 30px;
+    }
+
+    .recommend-item {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      text-align: center;
+      transition: all 0.3s;
+    }
+
+    .recommend-item:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+
+    .recommend-item h5 {
+      margin-bottom: 15px;
+      color: #667eea;
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .recommend-item img {
+      width: 100%;
+      height: 250px;
+      object-fit: cover;
+      border-radius: 10px;
+      border: 3px solid #e0e0e0;
+      margin-bottom: 12px;
+    }
+
+    .wear-count {
+      padding: 10px;
+      background: #e3f2fd;
+      border-radius: 8px;
+      margin-top: 10px;
+      font-weight: 600;
+      color: #1976d2;
+      font-size: 14px;
+    }
+
+    .wear-badge {
+      display: inline-block;
+      background: #4CAF50;
+      color: white;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      font-size: 18px;
+      color: #666;
+    }
+
+    .spinner {
+      border: 4px solid #f3f3f3;
+      border-top: 4px solid #667eea;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .error-message {
+      background: #ffebee;
+      color: #c62828;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 16px;
+      margin-top: 20px;
+    }
+
+    .success-message {
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      font-size: 16px;
+      margin-top: 20px;
+      animation: slideDown 0.5s;
+    }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .action-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+      margin-top: 30px;
+    }
+
+    .stats-box {
+      background: white;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+      text-align: center;
+    }
+
+    .stats-box p {
+      margin: 8px 0;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .stats-label {
+      font-weight: bold;
+      color: #333;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .recommend-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .action-buttons {
+        grid-template-columns: 1fr;
+      }
+
+      .button-group {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div>Smart Wardrobe Assistant</div>
+  <div>
+    <a href="{{ url_for('index') }}">Home</a>
+    <a href="{{ url_for('recommend') }}">Recommendations</a>
+    <a href="{{ url_for('wardrobe') }}">My Wardrobe</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h2>AI Outfit Recommendations 👕👖👟</h2>
+  <p style="text-align: center; color: #666; margin-bottom: 20px;">
+    Select your preferences to get personalized outfit recommendations based on less-worn items
+  </p>
+
+  <!-- Preference Selection Form -->
+  <div class="preference-form">
+    <h3>✨ Choose Your Style</h3>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label for="season">🌤️ Season:</label>
+        <select id="season" name="season" class="form-control">
+          <option value="Spring">🌸 Spring</option>
+          <option value="Summer" selected>☀️ Summer</option>
+          <option value="Fall">🍂 Fall</option>
+          <option value="Winter">❄️ Winter</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="occasion">🎯 Occasion:</label>
+        <select id="occasion" name="occasion" class="form-control">
+          <option value="Casual" selected>👕 Casual</option>
+          <option value="Formal">👔 Formal</option>
+          <option value="Party">🎉 Party</option>
+          <option value="Smart Casual">✨ Smart Casual</option>
+          <option value="Ethnic">🪔 Ethnic</option>
+          <option value="Sports">⚽ Sports</option>
+          <option value="Travel">✈️ Travel</option>
+        </select>
+      </div>
+    </div>
+    
+    <button class="generate-btn" onclick="generateOutfit()">
+      🎨 Generate Perfect Outfit
+    </button>
+  </div>
+
+  <!-- Results Container -->
+  <div class="recommend-container">
+    <!-- Loading State -->
+    <div id="loading" class="loading" style="display:none;">
+      <div class="spinner"></div>
+      <p>🔮 Generating your perfect outfit...</p>
+    </div>
+
+    <!-- Error Message -->
+    <div id="error-message" class="error-message" style="display:none;"></div>
+
+    <!-- Success Message -->
+    <div id="success-message" class="success-message" style="display:none;"></div>
+
+    <!-- Outfit Result -->
+    <div id="outfit-result" style="display:none;">
+      <h4>Your Perfect Outfit 🎯</h4>
+      
+      <div class="outfit-info">
+        <strong>Season:</strong> <span id="season-display"></span> | 
+        <strong>Occasion:</strong> <span id="occasion-display"></span>
+      </div>
+      
+      <div class="recommend-grid">
+        <div class="recommend-item">
+          <h5>👕 Top</h5>
+          <img id="top-image" src="" alt="Top">
+          <div class="wear-count">
+            👕 Worn <span id="top-wear">0</span> times
+          </div>
+        </div>
+        
+        <div class="recommend-item">
+          <h5>👖 Bottom</h5>
+          <img id="bottom-image" src="" alt="Bottom">
+          <div class="wear-count">
+            👖 Worn <span id="bottom-wear">0</span> times
+          </div>
+        </div>
+        
+        <div class="recommend-item">
+          <h5>👟 Shoes</h5>
+          <img id="shoe-image" src="" alt="Shoes">
+          <div class="wear-count">
+            👟 Worn <span id="shoe-wear">0</span> times
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="action-buttons">
+        <button class="wear-btn" onclick="markOutfitWorn()" id="wear-btn">
+          ✅ Wear This Outfit!
+        </button>
+        <button class="wear-btn refresh-btn" onclick="generateOutfit()">
+          🔄 Get Another Outfit
+        </button>
+      </div>
+
+      <!-- Why These Recommendations Stats -->
+      <div class="stats-box">
+        <p><span class="stats-label">💡 Why this outfit?</span></p>
+        <p>This outfit features your least-worn items to balance your wardrobe usage</p>
+        <p style="font-size: 12px; color: #999; margin-top: 10px;">Click "Wear This Outfit!" to update wear counts</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Store current outfit information
+let currentOutfit = {
+  top_id: null,
+  bottom_id: null,
+  shoe_id: null
+};
+
+/**
+ * Generate outfit based on selected season and occasion
+ */
+function generateOutfit() {
+  const season = document.getElementById('season').value;
+  const occasion = document.getElementById('occasion').value;
+  
+  // Hide previous results and show loading
+  document.getElementById('outfit-result').style.display = 'none';
+  document.getElementById('error-message').style.display = 'none';
+  document.getElementById('success-message').style.display = 'none';
+  document.getElementById('loading').style.display = 'block';
+  
+  // Send request to backend
+  fetch('/generate_outfit', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `season=${encodeURIComponent(season)}&occasion=${encodeURIComponent(occasion)}`
+  })
+  .then(response => {
+    if (!response.ok) {
+      return response.json().then(err => Promise.reject(err));
+    }
+    return response.json();
+  })
+  .then(data => {
+    document.getElementById('loading').style.display = 'none';
+    
+    if (data.error) {
+      // Show error message
+      document.getElementById('error-message').textContent = '❌ ' + data.error;
+      document.getElementById('error-message').style.display = 'block';
+    } else {
+      // Store outfit IDs for wear tracking
+      currentOutfit = {
+        top_id: data.top_id,
+        bottom_id: data.bottom_id,
+        shoe_id: data.shoe_id
+      };
+      
+      // Display outfit
+      document.getElementById('outfit-result').style.display = 'block';
+      document.getElementById('top-image').src = '/' + data.top_image;
+      document.getElementById('bottom-image').src = '/' + data.bottom_image;
+      document.getElementById('shoe-image').src = '/' + data.shoe_image;
+      document.getElementById('season-display').textContent = data.season;
+      document.getElementById('occasion-display').textContent = data.occasion;
+      
+      // Show wear counts
+      document.getElementById('top-wear').textContent = data.top_wear_count;
+      document.getElementById('bottom-wear').textContent = data.bottom_wear_count;
+      document.getElementById('shoe-wear').textContent = data.shoe_wear_count;
+      
+      // Scroll to outfit
+      document.getElementById('outfit-result').scrollIntoView({ behavior: 'smooth' });
+    }
+  })
+  .catch(error => {
+    document.getElementById('loading').style.display = 'none';
+    
+    let errorMsg = error.error || 'Failed to generate outfit. Please try again!';
+    document.getElementById('error-message').textContent = '❌ ' + errorMsg;
+    document.getElementById('error-message').style.display = 'block';
+    
+    console.error('Error:', error);
+  });
+}
+
+/**
+ * Mark the current outfit as worn and increment wear counts
+ */
+async function markOutfitWorn() {
+  // Disable button while processing
+  const btn = document.getElementById('wear-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Marking as worn...';
+  
+  try {
+    const response = await fetch('/mark_outfit_worn', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(currentOutfit)
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      // Show success message
+      const successDiv = document.getElementById('success-message');
+      successDiv.textContent = '✅ ' + data.message + ' Wear counts updated.';
+      successDiv.style.display = 'block';
+      
+      // Reset button
+      btn.disabled = false;
+      btn.textContent = '✅ Outfit Marked as Worn!';
+      
+      // Auto-generate new outfit after 2 seconds
+      setTimeout(() => {
+        btn.textContent = '✅ Wear This Outfit!';
+        generateOutfit();
+      }, 2000);
+    } else {
+      alert('❌ Error: ' + data.error);
+      btn.disabled = false;
+      btn.textContent = '✅ Wear This Outfit!';
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('❌ Failed to mark outfit as worn');
+    btn.disabled = false;
+    btn.textContent = '✅ Wear This Outfit!';
+  }
+}
+
+// Auto-generate outfit on page load
+document.addEventListener('DOMContentLoaded', function() {
+  // Optional: Uncomment to auto-generate on page load
+  // generateOutfit();
+});
+</script>
+
+</body>
+</html>

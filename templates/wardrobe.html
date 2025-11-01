@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Wardrobe - Smart Wardrobe Assistant</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      font-size: 32px;
+      margin-bottom: 30px;
+    }
+
+    .wardrobe-section {
+      margin-bottom: 50px;
+      background: white;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+
+    .wardrobe-section h3 {
+      color: #667eea;
+      font-size: 24px;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 3px solid #667eea;
+    }
+
+    .wardrobe-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .wardrobe-item {
+      background: #fff;
+      padding: 15px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      position: relative;
+      transition: all 0.3s ease;
+      border: 2px solid #f0f0f0;
+    }
+
+    .wardrobe-item:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+      border-color: #667eea;
+    }
+
+    .wardrobe-item img {
+      width: 100%;
+      height: 200px;
+      object-fit: cover;
+      border-radius: 10px;
+      margin-bottom: 12px;
+    }
+
+    .item-tags {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 5px 12px;
+      border-radius: 15px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .tag-season {
+      background: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .tag-occasion {
+      background: #f3e5f5;
+      color: #7b1fa2;
+    }
+
+    .tag-wear {
+      background: #c8e6c9;
+      color: #2e7d32;
+    }
+
+    .wear-count-badge {
+      display: inline-block;
+      padding: 8px 14px;
+      background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+      color: white;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+      margin: 8px 0;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+    }
+
+    .wear-count-badge.high {
+      background: linear-gradient(135deg, #FF9800 0%, #F57C00 100%);
+      box-shadow: 0 2px 8px rgba(255, 152, 0, 0.3);
+    }
+
+    .wear-count-badge.low {
+      background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%);
+      box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-edit, .btn-delete {
+      flex: 1;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      transition: all 0.3s;
+    }
+
+    .btn-edit {
+      background: #4CAF50;
+      color: white;
+    }
+
+    .btn-edit:hover {
+      background: #45a049;
+      transform: scale(1.05);
+    }
+
+    .btn-delete {
+      background: #f44336;
+      color: white;
+    }
+
+    .btn-delete:hover {
+      background: #da190b;
+      transform: scale(1.05);
+    }
+
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0,0,0,0.6);
+      animation: fadeIn 0.3s;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 8% auto;
+      padding: 35px;
+      border-radius: 20px;
+      width: 90%;
+      max-width: 500px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+      animation: slideUp 0.4s;
+    }
+
+    @keyframes slideUp {
+      from { 
+        transform: translateY(50px);
+        opacity: 0;
+      }
+      to { 
+        transform: translateY(0);
+        opacity: 1;
+      }
+    }
+
+    .modal-header {
+      margin-bottom: 25px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      color: #667eea;
+      margin: 0;
+      font-size: 26px;
+    }
+
+    .close {
+      font-size: 32px;
+      font-weight: bold;
+      color: #aaa;
+      cursor: pointer;
+      transition: color 0.3s;
+      line-height: 1;
+    }
+
+    .close:hover {
+      color: #333;
+    }
+
+    .form-group {
+      margin-bottom: 25px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: 600;
+      color: #333;
+      font-size: 16px;
+    }
+
+    .form-group select {
+      width: 100%;
+      padding: 14px;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: white;
+    }
+
+    .form-group select:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .btn-save {
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .btn-save:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-save:active {
+      transform: translateY(0);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #999;
+    }
+
+    .empty-state h3 {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+
+    .stats-summary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 20px;
+      text-align: center;
+    }
+
+    .stat-box {
+      padding: 15px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      backdrop-filter: blur(10px);
+    }
+
+    .stat-box h4 {
+      margin: 0 0 8px 0;
+      font-size: 14px;
+      opacity: 0.9;
+    }
+
+    .stat-box p {
+      margin: 0;
+      font-size: 24px;
+      font-weight: bold;
+    }
+
+    @media (max-width: 768px) {
+      .wardrobe-grid {
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      }
+
+      .modal-content {
+        width: 95%;
+        margin: 20% auto;
+        padding: 25px;
+      }
+
+      .stats-summary {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div>Smart Wardrobe Assistant</div>
+  <div>
+    <a href="{{ url_for('index') }}">Home</a>
+    <a href="{{ url_for('recommend') }}">Recommendations</a>
+    <a href="{{ url_for('wardrobe') }}">My Wardrobe</a>
+    <a href="{{ url_for('logout') }}">Logout</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h2>My Wardrobe 👔</h2>
+
+  {% if wardrobe['top']|length == 0 and wardrobe['bottom']|length == 0 and wardrobe['foot']|length == 0 %}
+  <div class="empty-state">
+    <h3>😕 Your wardrobe is empty</h3>
+    <p>Start by uploading some clothes from the home page!</p>
+  </div>
+  {% else %}
+  <!-- Statistics Summary -->
+  <div class="stats-summary">
+    <div class="stat-box">
+      <h4>📊 Total Items</h4>
+      <p>{{ wardrobe['top']|length + wardrobe['bottom']|length + wardrobe['foot']|length }}</p>
+    </div>
+    <div class="stat-box">
+      <h4>👕 Tops</h4>
+      <p>{{ wardrobe['top']|length }}</p>
+    </div>
+    <div class="stat-box">
+      <h4>👖 Bottoms</h4>
+      <p>{{ wardrobe['bottom']|length }}</p>
+    </div>
+    <div class="stat-box">
+      <h4>👟 Shoes</h4>
+      <p>{{ wardrobe['foot']|length }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Tops Section -->
+  {% if wardrobe['top']|length > 0 %}
+  <div class="wardrobe-section">
+    <h3>👕 Tops ({{ wardrobe['top']|length }})</h3>
+    <div class="wardrobe-grid">
+      {% for item in wardrobe['top'] %}
+      <div class="wardrobe-item">
+        <img src="{{ item['url'] }}" alt="Top">
+        <div class="item-tags">
+          <span class="tag tag-season">{{ item.get('season', 'Unknown') }}</span>
+          <span class="tag tag-occasion">{{ item.get('occasion', 'Unknown') }}</span>
+        </div>
+        
+        <!-- WEAR COUNT BADGE -->
+        <div class="wear-count-badge {% if item.get('wear_count', 0) > 5 %}high{% elif item.get('wear_count', 0) == 0 %}low{% endif %}">
+          👕 Worn {{ item.get('wear_count', 0) }} times
+        </div>
+        
+        <div class="item-actions">
+          <button class="btn-edit" onclick="openEditModal('{{ item['file_name'] }}', '{{ item.get('season', 'Summer') }}', '{{ item.get('occasion', 'Casual') }}')">
+            ✏️ Edit
+          </button>
+          <button class="btn-delete" onclick="deleteItem('{{ item['file_name'] }}')">
+            🗑️ Delete
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Bottoms Section -->
+  {% if wardrobe['bottom']|length > 0 %}
+  <div class="wardrobe-section">
+    <h3>👖 Bottoms ({{ wardrobe['bottom']|length }})</h3>
+    <div class="wardrobe-grid">
+      {% for item in wardrobe['bottom'] %}
+      <div class="wardrobe-item">
+        <img src="{{ item['url'] }}" alt="Bottom">
+        <div class="item-tags">
+          <span class="tag tag-season">{{ item.get('season', 'Unknown') }}</span>
+          <span class="tag tag-occasion">{{ item.get('occasion', 'Unknown') }}</span>
+        </div>
+        
+        <!-- WEAR COUNT BADGE -->
+        <div class="wear-count-badge {% if item.get('wear_count', 0) > 5 %}high{% elif item.get('wear_count', 0) == 0 %}low{% endif %}">
+          👖 Worn {{ item.get('wear_count', 0) }} times
+        </div>
+        
+        <div class="item-actions">
+          <button class="btn-edit" onclick="openEditModal('{{ item['file_name'] }}', '{{ item.get('season', 'Summer') }}', '{{ item.get('occasion', 'Casual') }}')">
+            ✏️ Edit
+          </button>
+          <button class="btn-delete" onclick="deleteItem('{{ item['file_name'] }}')">
+            🗑️ Delete
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Footwear Section -->
+  {% if wardrobe['foot']|length > 0 %}
+  <div class="wardrobe-section">
+    <h3>👟 Footwear ({{ wardrobe['foot']|length }})</h3>
+    <div class="wardrobe-grid">
+      {% for item in wardrobe['foot'] %}
+      <div class="wardrobe-item">
+        <img src="{{ item['url'] }}" alt="Shoes">
+        <div class="item-tags">
+          <span class="tag tag-season">{{ item.get('season', 'Unknown') }}</span>
+          <span class="tag tag-occasion">{{ item.get('occasion', 'Unknown') }}</span>
+        </div>
+        
+        <!-- WEAR COUNT BADGE -->
+        <div class="wear-count-badge {% if item.get('wear_count', 0) > 5 %}high{% elif item.get('wear_count', 0) == 0 %}low{% endif %}">
+          👟 Worn {{ item.get('wear_count', 0) }} times
+        </div>
+        
+        <div class="item-actions">
+          <button class="btn-edit" onclick="openEditModal('{{ item['file_name'] }}', '{{ item.get('season', 'Summer') }}', '{{ item.get('occasion', 'Casual') }}')">
+            ✏️ Edit
+          </button>
+          <button class="btn-delete" onclick="deleteItem('{{ item['file_name'] }}')">
+            🗑️ Delete
+          </button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h2>✏️ Edit Item Tags</h2>
+      <span class="close" onclick="closeEditModal()">&times;</span>
+    </div>
+    
+    <form id="editForm">
+      <input type="hidden" id="edit-filename">
+      
+      <div class="form-group">
+        <label for="edit-season">🌤️ Season:</label>
+        <select id="edit-season" name="season">
+          <option value="Spring">🌸 Spring</option>
+          <option value="Summer">☀️ Summer</option>
+          <option value="Fall">🍂 Fall</option>
+          <option value="Winter">❄️ Winter</option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label for="edit-occasion">🎯 Occasion:</label>
+        <select id="edit-occasion" name="occasion">
+          <option value="Casual">👕 Casual</option>
+          <option value="Formal">👔 Formal</option>
+          <option value="Party">🎉 Party</option>
+          <option value="Smart Casual">✨ Smart Casual</option>
+          <option value="Ethnic">🪔 Ethnic</option>
+          <option value="Sports">⚽ Sports</option>
+          <option value="Travel">✈️ Travel</option>
+        </select>
+      </div>
+      
+      <button type="button" class="btn-save" onclick="saveChanges()">
+        💾 Save Changes
+      </button>
+    </form>
+  </div>
+</div>
+
+<script>
+// Global variable to track current editing file
+let currentEditingFile = '';
+
+// Open edit modal
+function openEditModal(fileName, season, occasion) {
+  currentEditingFile = fileName;
+  document.getElementById('edit-filename').value = fileName;
+  document.getElementById('edit-season').value = season;
+  document.getElementById('edit-occasion').value = occasion;
+  document.getElementById('editModal').style.display = 'block';
+}
+
+// Close edit modal
+function closeEditModal() {
+  document.getElementById('editModal').style.display = 'none';
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+  const modal = document.getElementById('editModal');
+  if (event.target == modal) {
+    closeEditModal();
+  }
+}
+
+// Save changes
+async function saveChanges() {
+  const fileName = document.getElementById('edit-filename').value;
+  const season = document.getElementById('edit-season').value;
+  const occasion = document.getElementById('edit-occasion').value;
+  
+  try {
+    const response = await fetch('/update_item', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        file_name: fileName,
+        season: season,
+        occasion: occasion
+      })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      alert('✅ Item updated successfully!');
+      location.reload();
+    } else {
+      alert('❌ Error: ' + (data.error || 'Unknown error'));
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('❌ Failed to update item. Please try again.');
+  }
+}
+
+// Delete item
+async function deleteItem(fileName) {
+  if (!confirm('⚠️ Are you sure you want to delete this item? This action cannot be undone.')) {
+    return;
+  }
+  
+  try {
+    const response = await fetch('/delete_item', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ file: fileName })
+    });
+    
+    const data = await response.json();
+    
+    if (data.success) {
+      alert('✅ Item deleted successfully!');
+      location.reload();
+    } else {
+      alert('❌ Error: ' + (data.error || 'Failed to delete'));
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    alert('❌ Failed to delete item. Please try again.');
+  }
+}
+</script>
+
+</body>
+</html>
